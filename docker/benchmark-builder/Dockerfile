@@ -38,11 +38,12 @@ RUN sed -i "s@http://.*archive.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g
 RUN add-apt-repository -y ppa:deadsnakes/ppa && \
     sed -i 's/ppa.launchpad.net/launchpad.proxy.ustclug.org/g' /etc/apt/sources.list /etc/apt/sources.list.d/*.list && \
     sed -ri 's#(.*http)(://launchpad.proxy.ustclug.org.*)#\1s\2#g' /etc/apt/sources.list /etc/apt/sources.list.d/*.list && \
-    apt-get update && apt-get install -y python3.10
+    apt-get update && apt-get install -y python3.10 wget
 
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 0 && \
-    update-alternatives --set python3 /usr/bin/python3.10 && \
-    curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+    update-alternatives --set python3 /usr/bin/python3.10
+
+RUN wget https://bootstrap.pypa.io/get-pip.py && python3 get-pip.py
     # apt-get upgrade -y && \
     # apt-get install -y \
     # curl \
