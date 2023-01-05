@@ -21,6 +21,10 @@ RUN git clone https://github.com/curl/curl-fuzzer /src/curl_fuzzer
 RUN git -C /src/curl_fuzzer checkout dd486c1e5910e722e43c451d4de928ac80f5967d
 RUN git clone --depth 1 https://github.com/curl/curl.git /src/curl
 
+RUN sed -i "s@http://.*archive.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list && \
+    sed -i "s@http://.*security.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list && \
+    apt-get update 
+
 # Use curl-fuzzer's scripts to get latest dependencies.
 RUN $SRC/curl_fuzzer/scripts/ossfuzzdeps.sh
 

@@ -22,7 +22,9 @@ RUN if which rustup; then rustup self uninstall -y; fi && \
     rm /rustup.sh
 
 # Install dependencies.
-RUN apt-get update && \
+RUN sed -i "s@http://.*archive.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list && \
+    sed -i "s@http://.*security.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list && \
+    apt-get update && \
     apt-get remove -y llvm-10 && \
     apt-get install -y \
         build-essential \
@@ -32,13 +34,16 @@ RUN apt-get update && \
     apt-get install -y wget libstdc++5 libtool-bin automake flex bison \
         libglib2.0-dev libpixman-1-dev python3-setuptools unzip \
         apt-utils apt-transport-https ca-certificates joe curl && \
+    git config --global http.https://github.com.proxy http://172.17.0.1:7890 && \
     PATH="/root/.cargo/bin/:$PATH" cargo install cargo-make
 
 # Download libafl.
 RUN git clone \
         --depth 1 \
         --branch 0.8.2 \
-        https://github.com/AFLplusplus/libafl /libafl
+        https://ghproxy.com/https://github.com/AFLplusplus/libafl /libafl
+
+RUN echo '[source.crates-io]\nregistry = "https://github.com/rust-lang/crates.io-index"\nreplace-with = "ustc"\n[source.ustc]\nregistry = "git://mirrors.ustc.edu.cn/crates.io-index"\n[http]\ncheck-revoke = false' >> ~/.cargo/config
 
 # Compile libafl.
 RUN cd /libafl && \

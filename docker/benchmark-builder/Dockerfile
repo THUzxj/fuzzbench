@@ -28,32 +28,50 @@ ENV DEBUG_BUILDER $debug_builder
 ENV PYTHON_VERSION 3.10.8
 
 # Install dependencies required by Python3 or Pip3.
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y \
-    curl \
-    xz-utils \
-    build-essential \
-    zlib1g-dev \
-    libssl-dev \
-    libffi-dev
+RUN sed -i "s@http://.*archive.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list && \
+    sed -i "s@http://.*security.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y software-properties-common && \
+    apt-get install --reinstall ca-certificates
 
-RUN cd /tmp/ && \
-    curl -O \
-    https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tar.xz && \
-    tar -xvf Python-$PYTHON_VERSION.tar.xz > /dev/null && \
-    cd Python-$PYTHON_VERSION && \
-    ./configure \
-        --enable-loadable-sqlite-extensions \
-        --enable-optimizations \
-        > /dev/null && \
-    make -j install > /dev/null && \
-    rm -r /tmp/Python-$PYTHON_VERSION.tar.xz /tmp/Python-$PYTHON_VERSION
+
+RUN add-apt-repository -y ppa:deadsnakes/ppa && \
+    sed -i 's/ppa.launchpad.net/launchpad.proxy.ustclug.org/g' /etc/apt/sources.list /etc/apt/sources.list.d/*.list && \
+    sed -ri 's#(.*http)(://launchpad.proxy.ustclug.org.*)#\1s\2#g' /etc/apt/sources.list /etc/apt/sources.list.d/*.list && \
+    apt-get update && apt-get install -y python3.10
+
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 0 && \
+    update-alternatives --set python3 /usr/bin/python3.10 && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+    # apt-get upgrade -y && \
+    # apt-get install -y \
+    # curl \
+    # xz-utils \
+    # build-essential \
+    # zlib1g-dev \
+    # libssl-dev \
+    # libffi-dev \
+    # python3.10
+    # python3-pip
+
+# RUN cd /tmp/ && \
+#     curl -O \
+#     https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tar.xz && \
+#     tar -xvf Python-$PYTHON_VERSION.tar.xz > /dev/null && \
+#     cd Python-$PYTHON_VERSION && \
+#     ./configure \
+#         --enable-loadable-sqlite-extensions \
+#         --enable-optimizations \
+#         > /dev/null && \
+#     make -j install > /dev/null && \
+#     rm -r /tmp/Python-$PYTHON_VERSION.tar.xz /tmp/Python-$PYTHON_VERSION
 
 # Install common python dependencies.
 COPY ./requirements.txt /tmp
-RUN pip3 install -r /tmp/requirements.txt
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple &&  pip3 install -r /tmp/requirements.txt
 
+# git proxy
+RUN git config --global http.https://github.com.proxy http://172.17.0.1:7890
 
 # Copy the entire fuzzers directory tree to allow for module dependencies.
 COPY fuzzers $SRC/fuzzers
